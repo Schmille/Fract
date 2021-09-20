@@ -14,3 +14,20 @@ pub fn gcd_u8(first: u8, second: u8) -> u8 {
     
     a
 }
+
+#[inline]
+pub fn gcd_u16(first: u16, second: u16) -> u16 {
+    let mut a: u16 = first;
+    let mut b: u16 = second;
+    loop {
+        if b == 0 {
+            break;
+        }
+
+        let temp: u16 = b;
+        b = a % b;
+        a = temp;
+    }
+    
+    a
+}

@@ -6,7 +6,7 @@ trait Fract<B, S, O> {
     fn to_float(&self) -> O;
     fn new(numerator: B, denominator: B) -> S;
     fn invert(&self) -> S;
-    fn expand(&self, multiplicator: u8) -> S;
+    fn expand(&self, multiplicator: B) -> S;
     fn reduce(&self) -> S;
 }
 
@@ -242,6 +242,248 @@ mod tests_fract8 {
         };
 
         let value: Fract8 = Fract8 {
+            numerator: 10,
+            denominator: 18,
+        };
+
+        assert_eq!(expected, value.reduce())
+    }
+}
+
+
+// Fract16
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub struct Fract16 {
+    pub numerator: u16,
+    pub denominator: u16,
+}
+
+impl Fract<u16, Fract16, f32> for Fract16 {
+    #[inline]
+    fn to_float(&self) -> f32 {
+        self.numerator as f32 / self.denominator as f32
+    }
+
+    #[inline]
+    fn new(numerator: u16, denominator: u16) -> Fract16 {
+        Fract16 {
+            numerator: numerator,
+            denominator: denominator,
+        }
+    }
+
+    #[inline]
+    fn invert(&self) -> Fract16 {
+        Fract16 {
+            numerator: self.denominator,
+            denominator: self.numerator,
+        }
+    }
+
+    #[inline]
+    fn expand(&self, multiplicator: u16) -> Fract16 {
+        Fract16 {
+            numerator: self.numerator * multiplicator,
+            denominator: self.denominator * multiplicator,
+        }
+    }
+
+    #[inline]
+    fn reduce(&self) -> Fract16 {
+        let gcd: u16 = utils::gcd_u16(self.numerator, self.denominator);
+        Fract16 {
+            numerator: self.numerator / gcd,
+            denominator: self.denominator / gcd,
+        }
+    }
+}
+
+impl From<u16> for Fract16 {
+    #[inline]
+    fn from(input: u16) -> Self {
+        Fract16 {
+            numerator: input,
+            denominator: 1,
+        }
+    }
+}
+
+impl Add for Fract16 {
+    type Output = Fract16;
+
+    #[inline]
+    fn add(self, rhs: Self) -> Self::Output {
+        let mut nlhs: Fract16 = self;
+        let mut nrhs: Fract16 = rhs;
+
+        if self.denominator != rhs.denominator {
+            let old_denom: u16 = nlhs.denominator;
+            nlhs = nlhs.expand(nrhs.denominator);
+            nrhs = nrhs.expand(old_denom);
+        }
+
+        Fract16 {
+            numerator: nlhs.numerator + nrhs.numerator,
+            denominator: nlhs.denominator,
+        }
+    }
+}
+
+impl Sub for Fract16 {
+    type Output = Fract16;
+
+    #[inline]
+    fn sub(self, rhs: Self) -> Self::Output {
+        let mut nlhs: Fract16 = self;
+        let mut nrhs: Fract16 = rhs;
+
+        if self.denominator != rhs.denominator {
+            let old_denom: u16 = nlhs.denominator;
+            nlhs = nlhs.expand(nrhs.denominator);
+            nrhs = nrhs.expand(old_denom);
+        }
+
+        Fract16 {
+            numerator: nlhs.numerator - nrhs.numerator,
+            denominator: nlhs.denominator,
+        }
+    }
+}
+
+impl Mul for Fract16 {
+    type Output = Fract16;
+
+    #[inline]
+    fn mul(self, rhs: Self) -> Self::Output {
+        Fract16 {
+            numerator: self.numerator * rhs.numerator,
+            denominator: self.denominator * rhs.denominator,
+        }
+    }
+}
+
+impl Div for Fract16 {
+    type Output = Fract16;
+
+    #[inline]
+    fn div(self, rhs: Self) -> Self::Output {
+        self * rhs.invert()
+    }
+}
+#[cfg(test)]
+mod tests_fract16 {
+    use assert_approx_eq::assert_approx_eq;
+
+    use crate::{Fract, Fract16};
+
+    #[test]
+    fn should_create() {
+        let expected: Fract16 = Fract16 {
+            numerator: 8,
+            denominator: 10,
+        };
+
+        let actual: Fract16 = Fract16::new(8, 10);
+
+        assert_eq!(expected, actual)
+    }
+
+    #[test]
+    fn should_invert() {
+        let expected: Fract16 = Fract16 {
+            numerator: 10,
+            denominator: 8,
+        };
+
+        let actual: Fract16 = Fract16::new(8, 10).invert();
+
+        assert_eq!(expected, actual)
+    }
+
+    #[test]
+    fn should_expand() {
+        let expected: Fract16 = Fract16 {
+            numerator: 80,
+            denominator: 100,
+        };
+
+        let actual: Fract16 = Fract16::new(8, 10).expand(10);
+
+        assert_eq!(expected, actual)
+    }
+
+    #[test]
+    fn should_convert() {
+        let expected: f32 = 0.8;
+        let actual: f32 = Fract16::new(8, 10).to_float();
+
+        assert_approx_eq!(expected, actual)
+    }
+
+    #[test]
+    fn should_add() {
+        let expected: Fract16 = Fract16 {
+            numerator: 28,
+            denominator: 20,
+        };
+
+        let first: Fract16 = Fract16::new(1, 2);
+        let second: Fract16 = Fract16::new(9, 10);
+        let result: Fract16 = first + second;
+
+        assert_eq!(expected, result)
+    }
+
+    #[test]
+    fn should_sub() {
+        let expected: Fract16 = Fract16 {
+            numerator: 22,
+            denominator: 20,
+        };
+
+        let first: Fract16 = Fract16::new(4, 2);
+        let second: Fract16 = Fract16::new(9, 10);
+        let result: Fract16 = first - second;
+
+        assert_eq!(expected, result)
+    }
+
+    #[test]
+    fn should_mul() {
+        let expected: Fract16 = Fract16 {
+            numerator: 8,
+            denominator: 10,
+        };
+
+        let first: Fract16 = Fract16::new(2, 5);
+        let second: Fract16 = Fract16::new(4, 2);
+        let result: Fract16 = first * second;
+
+        assert_eq!(expected, result)
+    }
+
+    #[test]
+    fn should_div() {
+        let expected: Fract16 = Fract16 {
+            numerator: 10,
+            denominator: 18,
+        };
+
+        let first: Fract16 = Fract16::new(1, 2);
+        let second: Fract16 = Fract16::new(9, 10);
+        let result: Fract16 = first / second;
+
+        assert_eq!(expected, result)
+    }
+
+    #[test]
+    fn should_reduce() {
+        let expected: Fract16 = Fract16 {
+            numerator: 5,
+            denominator: 9,
+        };
+
+        let value: Fract16 = Fract16 {
             numerator: 10,
             denominator: 18,
         };
