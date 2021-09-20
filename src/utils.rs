@@ -31,3 +31,20 @@ pub fn gcd_u16(first: u16, second: u16) -> u16 {
     
     a
 }
+
+#[inline]
+pub fn gcd_u32(first: u32, second: u32) -> u32 {
+    let mut a: u32 = first;
+    let mut b: u32 = second;
+    loop {
+        if b == 0 {
+            break;
+        }
+
+        let temp: u32 = b;
+        b = a % b;
+        a = temp;
+    }
+    
+    a
+}

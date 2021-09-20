@@ -491,3 +491,244 @@ mod tests_fract16 {
         assert_eq!(expected, value.reduce())
     }
 }
+
+// Fract32
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub struct Fract32 {
+    pub numerator: u32,
+    pub denominator: u32,
+}
+
+impl Fract<u32, Fract32, f32> for Fract32 {
+    #[inline]
+    fn to_float(&self) -> f32 {
+        self.numerator as f32 / self.denominator as f32
+    }
+
+    #[inline]
+    fn new(numerator: u32, denominator: u32) -> Fract32 {
+        Fract32 {
+            numerator: numerator,
+            denominator: denominator,
+        }
+    }
+
+    #[inline]
+    fn invert(&self) -> Fract32 {
+        Fract32 {
+            numerator: self.denominator,
+            denominator: self.numerator,
+        }
+    }
+
+    #[inline]
+    fn expand(&self, multiplicator: u32) -> Fract32 {
+        Fract32 {
+            numerator: self.numerator * multiplicator,
+            denominator: self.denominator * multiplicator,
+        }
+    }
+
+    #[inline]
+    fn reduce(&self) -> Fract32 {
+        let gcd: u32 = utils::gcd_u32(self.numerator, self.denominator);
+        Fract32 {
+            numerator: self.numerator / gcd,
+            denominator: self.denominator / gcd,
+        }
+    }
+}
+
+impl From<u32> for Fract32 {
+    #[inline]
+    fn from(input: u32) -> Self {
+        Fract32 {
+            numerator: input,
+            denominator: 1,
+        }
+    }
+}
+
+impl Add for Fract32 {
+    type Output = Fract32;
+
+    #[inline]
+    fn add(self, rhs: Self) -> Self::Output {
+        let mut nlhs: Fract32 = self;
+        let mut nrhs: Fract32 = rhs;
+
+        if self.denominator != rhs.denominator {
+            let old_denom: u32 = nlhs.denominator;
+            nlhs = nlhs.expand(nrhs.denominator);
+            nrhs = nrhs.expand(old_denom);
+        }
+
+        Fract32 {
+            numerator: nlhs.numerator + nrhs.numerator,
+            denominator: nlhs.denominator,
+        }
+    }
+}
+
+impl Sub for Fract32 {
+    type Output = Fract32;
+
+    #[inline]
+    fn sub(self, rhs: Self) -> Self::Output {
+        let mut nlhs: Fract32 = self;
+        let mut nrhs: Fract32 = rhs;
+
+        if self.denominator != rhs.denominator {
+            let old_denom: u32 = nlhs.denominator;
+            nlhs = nlhs.expand(nrhs.denominator);
+            nrhs = nrhs.expand(old_denom);
+        }
+
+        Fract32 {
+            numerator: nlhs.numerator - nrhs.numerator,
+            denominator: nlhs.denominator,
+        }
+    }
+}
+
+impl Mul for Fract32 {
+    type Output = Fract32;
+
+    #[inline]
+    fn mul(self, rhs: Self) -> Self::Output {
+        Fract32 {
+            numerator: self.numerator * rhs.numerator,
+            denominator: self.denominator * rhs.denominator,
+        }
+    }
+}
+
+impl Div for Fract32 {
+    type Output = Fract32;
+
+    #[inline]
+    fn div(self, rhs: Self) -> Self::Output {
+        self * rhs.invert()
+    }
+}
+#[cfg(test)]
+mod tests_Fract32 {
+    use assert_approx_eq::assert_approx_eq;
+
+    use crate::{Fract, Fract32};
+
+    #[test]
+    fn should_create() {
+        let expected: Fract32 = Fract32 {
+            numerator: 8,
+            denominator: 10,
+        };
+
+        let actual: Fract32 = Fract32::new(8, 10);
+
+        assert_eq!(expected, actual)
+    }
+
+    #[test]
+    fn should_invert() {
+        let expected: Fract32 = Fract32 {
+            numerator: 10,
+            denominator: 8,
+        };
+
+        let actual: Fract32 = Fract32::new(8, 10).invert();
+
+        assert_eq!(expected, actual)
+    }
+
+    #[test]
+    fn should_expand() {
+        let expected: Fract32 = Fract32 {
+            numerator: 80,
+            denominator: 100,
+        };
+
+        let actual: Fract32 = Fract32::new(8, 10).expand(10);
+
+        assert_eq!(expected, actual)
+    }
+
+    #[test]
+    fn should_convert() {
+        let expected: f32 = 0.8;
+        let actual: f32 = Fract32::new(8, 10).to_float();
+
+        assert_approx_eq!(expected, actual)
+    }
+
+    #[test]
+    fn should_add() {
+        let expected: Fract32 = Fract32 {
+            numerator: 28,
+            denominator: 20,
+        };
+
+        let first: Fract32 = Fract32::new(1, 2);
+        let second: Fract32 = Fract32::new(9, 10);
+        let result: Fract32 = first + second;
+
+        assert_eq!(expected, result)
+    }
+
+    #[test]
+    fn should_sub() {
+        let expected: Fract32 = Fract32 {
+            numerator: 22,
+            denominator: 20,
+        };
+
+        let first: Fract32 = Fract32::new(4, 2);
+        let second: Fract32 = Fract32::new(9, 10);
+        let result: Fract32 = first - second;
+
+        assert_eq!(expected, result)
+    }
+
+    #[test]
+    fn should_mul() {
+        let expected: Fract32 = Fract32 {
+            numerator: 8,
+            denominator: 10,
+        };
+
+        let first: Fract32 = Fract32::new(2, 5);
+        let second: Fract32 = Fract32::new(4, 2);
+        let result: Fract32 = first * second;
+
+        assert_eq!(expected, result)
+    }
+
+    #[test]
+    fn should_div() {
+        let expected: Fract32 = Fract32 {
+            numerator: 10,
+            denominator: 18,
+        };
+
+        let first: Fract32 = Fract32::new(1, 2);
+        let second: Fract32 = Fract32::new(9, 10);
+        let result: Fract32 = first / second;
+
+        assert_eq!(expected, result)
+    }
+
+    #[test]
+    fn should_reduce() {
+        let expected: Fract32 = Fract32 {
+            numerator: 5,
+            denominator: 9,
+        };
+
+        let value: Fract32 = Fract32 {
+            numerator: 10,
+            denominator: 18,
+        };
+
+        assert_eq!(expected, value.reduce())
+    }
+}
