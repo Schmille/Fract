@@ -65,3 +65,20 @@ pub fn gcd_u64(first: u64, second: u64) -> u64 {
     
     a
 }
+
+#[inline]
+pub fn gcd_u128(first: u128, second: u128) -> u128 {
+    let mut a: u128 = first;
+    let mut b: u128 = second;
+    loop {
+        if b == 0 {
+            break;
+        }
+
+        let temp: u128 = b;
+        b = a % b;
+        a = temp;
+    }
+    
+    a
+}

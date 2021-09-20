@@ -612,7 +612,7 @@ impl Div for Fract32 {
     }
 }
 #[cfg(test)]
-mod tests_Fract32 {
+mod tests_fract32 {
     use assert_approx_eq::assert_approx_eq;
 
     use crate::{Fract, Fract32};
@@ -853,7 +853,7 @@ impl Div for Fract64 {
     }
 }
 #[cfg(test)]
-mod tests_Fract64 {
+mod tests_fract64 {
     use assert_approx_eq::assert_approx_eq;
 
     use crate::{Fract, Fract64};
@@ -966,6 +966,247 @@ mod tests_Fract64 {
         };
 
         let value: Fract64 = Fract64 {
+            numerator: 10,
+            denominator: 18,
+        };
+
+        assert_eq!(expected, value.reduce())
+    }
+}
+
+// Fract128
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub struct Fract128 {
+    pub numerator: u128,
+    pub denominator: u128,
+}
+
+impl Fract<u128, Fract128, f64> for Fract128 {
+    #[inline]
+    fn to_float(&self) -> f64 {
+        self.numerator as f64 / self.denominator as f64
+    }
+
+    #[inline]
+    fn new(numerator: u128, denominator: u128) -> Fract128 {
+        Fract128 {
+            numerator: numerator,
+            denominator: denominator,
+        }
+    }
+
+    #[inline]
+    fn invert(&self) -> Fract128 {
+        Fract128 {
+            numerator: self.denominator,
+            denominator: self.numerator,
+        }
+    }
+
+    #[inline]
+    fn expand(&self, multiplicator: u128) -> Fract128 {
+        Fract128 {
+            numerator: self.numerator * multiplicator,
+            denominator: self.denominator * multiplicator,
+        }
+    }
+
+    #[inline]
+    fn reduce(&self) -> Fract128 {
+        let gcd: u128 = utils::gcd_u128(self.numerator, self.denominator);
+        Fract128 {
+            numerator: self.numerator / gcd,
+            denominator: self.denominator / gcd,
+        }
+    }
+}
+
+impl From<u128> for Fract128 {
+    #[inline]
+    fn from(input: u128) -> Self {
+        Fract128 {
+            numerator: input,
+            denominator: 1,
+        }
+    }
+}
+
+impl Add for Fract128 {
+    type Output = Fract128;
+
+    #[inline]
+    fn add(self, rhs: Self) -> Self::Output {
+        let mut nlhs: Fract128 = self;
+        let mut nrhs: Fract128 = rhs;
+
+        if self.denominator != rhs.denominator {
+            let old_denom: u128 = nlhs.denominator;
+            nlhs = nlhs.expand(nrhs.denominator);
+            nrhs = nrhs.expand(old_denom);
+        }
+
+        Fract128 {
+            numerator: nlhs.numerator + nrhs.numerator,
+            denominator: nlhs.denominator,
+        }
+    }
+}
+
+impl Sub for Fract128 {
+    type Output = Fract128;
+
+    #[inline]
+    fn sub(self, rhs: Self) -> Self::Output {
+        let mut nlhs: Fract128 = self;
+        let mut nrhs: Fract128 = rhs;
+
+        if self.denominator != rhs.denominator {
+            let old_denom: u128 = nlhs.denominator;
+            nlhs = nlhs.expand(nrhs.denominator);
+            nrhs = nrhs.expand(old_denom);
+        }
+
+        Fract128 {
+            numerator: nlhs.numerator - nrhs.numerator,
+            denominator: nlhs.denominator,
+        }
+    }
+}
+
+impl Mul for Fract128 {
+    type Output = Fract128;
+
+    #[inline]
+    fn mul(self, rhs: Self) -> Self::Output {
+        Fract128 {
+            numerator: self.numerator * rhs.numerator,
+            denominator: self.denominator * rhs.denominator,
+        }
+    }
+}
+
+impl Div for Fract128 {
+    type Output = Fract128;
+
+    #[inline]
+    fn div(self, rhs: Self) -> Self::Output {
+        self * rhs.invert()
+    }
+}
+#[cfg(test)]
+mod tests_fract128 {
+    use assert_approx_eq::assert_approx_eq;
+
+    use crate::{Fract, Fract128};
+
+    #[test]
+    fn should_create() {
+        let expected: Fract128 = Fract128 {
+            numerator: 8,
+            denominator: 10,
+        };
+
+        let actual: Fract128 = Fract128::new(8, 10);
+
+        assert_eq!(expected, actual)
+    }
+
+    #[test]
+    fn should_invert() {
+        let expected: Fract128 = Fract128 {
+            numerator: 10,
+            denominator: 8,
+        };
+
+        let actual: Fract128 = Fract128::new(8, 10).invert();
+
+        assert_eq!(expected, actual)
+    }
+
+    #[test]
+    fn should_expand() {
+        let expected: Fract128 = Fract128 {
+            numerator: 80,
+            denominator: 100,
+        };
+
+        let actual: Fract128 = Fract128::new(8, 10).expand(10);
+
+        assert_eq!(expected, actual)
+    }
+
+    #[test]
+    fn should_convert() {
+        let expected: f64 = 0.8;
+        let actual: f64 = Fract128::new(8, 10).to_float();
+
+        assert_approx_eq!(expected, actual)
+    }
+
+    #[test]
+    fn should_add() {
+        let expected: Fract128 = Fract128 {
+            numerator: 28,
+            denominator: 20,
+        };
+
+        let first: Fract128 = Fract128::new(1, 2);
+        let second: Fract128 = Fract128::new(9, 10);
+        let result: Fract128 = first + second;
+
+        assert_eq!(expected, result)
+    }
+
+    #[test]
+    fn should_sub() {
+        let expected: Fract128 = Fract128 {
+            numerator: 22,
+            denominator: 20,
+        };
+
+        let first: Fract128 = Fract128::new(4, 2);
+        let second: Fract128 = Fract128::new(9, 10);
+        let result: Fract128 = first - second;
+
+        assert_eq!(expected, result)
+    }
+
+    #[test]
+    fn should_mul() {
+        let expected: Fract128 = Fract128 {
+            numerator: 8,
+            denominator: 10,
+        };
+
+        let first: Fract128 = Fract128::new(2, 5);
+        let second: Fract128 = Fract128::new(4, 2);
+        let result: Fract128 = first * second;
+
+        assert_eq!(expected, result)
+    }
+
+    #[test]
+    fn should_div() {
+        let expected: Fract128 = Fract128 {
+            numerator: 10,
+            denominator: 18,
+        };
+
+        let first: Fract128 = Fract128::new(1, 2);
+        let second: Fract128 = Fract128::new(9, 10);
+        let result: Fract128 = first / second;
+
+        assert_eq!(expected, result)
+    }
+
+    #[test]
+    fn should_reduce() {
+        let expected: Fract128 = Fract128 {
+            numerator: 5,
+            denominator: 9,
+        };
+
+        let value: Fract128 = Fract128 {
             numerator: 10,
             denominator: 18,
         };
