@@ -11,7 +11,7 @@ pub fn gcd_u8(first: u8, second: u8) -> u8 {
         b = a % b;
         a = temp;
     }
-    
+
     a
 }
 
@@ -28,7 +28,7 @@ pub fn gcd_u16(first: u16, second: u16) -> u16 {
         b = a % b;
         a = temp;
     }
-    
+
     a
 }
 
@@ -45,7 +45,7 @@ pub fn gcd_u32(first: u32, second: u32) -> u32 {
         b = a % b;
         a = temp;
     }
-    
+
     a
 }
 
@@ -62,7 +62,7 @@ pub fn gcd_u64(first: u64, second: u64) -> u64 {
         b = a % b;
         a = temp;
     }
-    
+
     a
 }
 
@@ -79,6 +79,6 @@ pub fn gcd_u128(first: u128, second: u128) -> u128 {
         b = a % b;
         a = temp;
     }
-    
+
     a
 }

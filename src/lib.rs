@@ -250,7 +250,6 @@ mod tests_fract8 {
     }
 }
 
-
 // Fract16
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub struct Fract16 {
